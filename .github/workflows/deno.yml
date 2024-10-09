@@ -64,5 +64,5 @@ jobs:
         uses: denoland/deployctl@v1
         with:
           project: "church-pokrova-deno"
-          entrypoint: "main.ts"
+          entrypoint: "./api/main.ts"
           root: "."
