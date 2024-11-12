@@ -39,7 +39,8 @@
     "noImplicitOverride": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./app/*"]
+      "@/*": ["./app/*"],
+      "@db/*": ["./db/*"],
     },
 
     // Vite takes care of building everything, not tsc.
