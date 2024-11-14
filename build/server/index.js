@@ -1,15 +1,14 @@
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
-import { RemixServer, useLoaderData, Meta, Links, Outlet, ScrollRestoration, Scripts, json } from "@remix-run/react";
+import { RemixServer, useLoaderData, Meta, Links, Outlet, ScrollRestoration, Scripts } from "@remix-run/react";
 import { isbot } from "isbot";
 import { renderToReadableStream } from "react-dom/server";
 import { cssBundleHref } from "@remix-run/css-bundle";
 import { createThemeSessionResolver, ThemeProvider, useTheme, PreventFlashOnWrongTheme, createThemeAction } from "remix-themes";
 import { createCookieSessionStorage } from "@remix-run/cloudflare";
 import { clsx } from "clsx";
-import { drizzle } from "drizzle-orm/libsql";
-import { createClient } from "@libsql/client";
-import { z } from "zod";
 import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 const ABORT_DELAY = 5e3;
 function headers() {
   return {
@@ -127,21 +126,6 @@ const sessionTable = sqliteTable("session", {
     mode: "timestamp"
   }).notNull()
 });
-const EnvSchema = z.object({
-  DATABASE_URL: z.string().url(),
-  TURSO_AUTH_TOKEN: z.string()
-});
-const precessEnv = EnvSchema.parse(process.env);
-const turso = createClient({
-  url: precessEnv.DATABASE_URL,
-  authToken: precessEnv.TURSO_AUTH_TOKEN
-});
-const db = drizzle(turso, {
-  schema: {
-    user: userTable,
-    session: sessionTable
-  }
-});
 const meta = () => {
   return [
     { title: "Sviatoslav Chyzh | Full Stack Software Engineer" },
@@ -151,17 +135,34 @@ const meta = () => {
     }
   ];
 };
-async function loader() {
+const loader = async ({ context }) => {
+  const { env } = context.cloudflare;
+  const { kv } = env;
+  await kv.put("remix", "remix can access cloudflare kv");
+  const value = await kv.get("remix");
+  console.log("at remix loader", value);
+  const turso = createClient({
+    url: "libsql://church-pokrova-db-sviatoslavchyzh.turso.io",
+    authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3MzE0MjkzMTUsImlkIjoiODEyZTFhMTctODM2OS00ZjU1LTlhOWUtODhlMTRjMTM0MDI1In0.Eiy2O-BdUobrZ8-vge8yl6FUSYW2USe9vLXcoiV_7P5cEeYgVJXSs0i2OyeQoZ-ewsKP8RE0vw2kh6EGMahQCQ"
+  });
+  const db = drizzle(turso, {
+    schema: {
+      user: userTable,
+      session: sessionTable
+    }
+  });
   const [data] = await db.select().from(userTable);
   if (!data) {
-    return json({ error: "No data found" }, { status: 404 });
+    throw new Error("No data found");
   }
   return data;
-}
+};
 function Index() {
   const data = useLoaderData();
-  console.log(data);
-  return /* @__PURE__ */ jsx(Fragment, { children: "Hello World" });
+  return /* @__PURE__ */ jsxs(Fragment, { children: [
+    "Hello World ",
+    data.username
+  ] });
 }
 const route2 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
@@ -169,7 +170,7 @@ const route2 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProper
   loader,
   meta
 }, Symbol.toStringTag, { value: "Module" }));
-const serverManifest = { "entry": { "module": "/assets/entry.client-Cbb3Cy2-.js", "imports": ["/assets/components-DHPpVo2E.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/root-CgHMFU71.js", "imports": ["/assets/components-DHPpVo2E.js"], "css": [] }, "routes/action.set-theme": { "id": "routes/action.set-theme", "parentId": "root", "path": "action/set-theme", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/action.set-theme-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/_index-BjUif3_t.js", "imports": ["/assets/components-DHPpVo2E.js"], "css": [] } }, "url": "/assets/manifest-57bed1a6.js", "version": "57bed1a6" };
+const serverManifest = { "entry": { "module": "/assets/entry.client-Cbb3Cy2-.js", "imports": ["/assets/components-DHPpVo2E.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/root-CgHMFU71.js", "imports": ["/assets/components-DHPpVo2E.js"], "css": [] }, "routes/action.set-theme": { "id": "routes/action.set-theme", "parentId": "root", "path": "action/set-theme", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/action.set-theme-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/_index-DCE-Y4Lw.js", "imports": ["/assets/components-DHPpVo2E.js"], "css": [] } }, "url": "/assets/manifest-bef6037b.js", "version": "bef6037b" };
 const mode = "production";
 const assetsBuildDirectory = "build/client";
 const basename = "/";

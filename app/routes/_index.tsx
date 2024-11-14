@@ -1,7 +1,9 @@
 import type { MetaFunction } from '@remix-run/cloudflare';
-import { db } from '@db/index';
-import { userTable } from '@db/schemas/authentication';
-import { json, useLoaderData } from '@remix-run/react';
+import { sessionTable, userTable } from '@db/schemas/authentication';
+import { useLoaderData } from '@remix-run/react';
+import { createClient } from '@libsql/client';
+import { drizzle } from 'drizzle-orm/libsql';
+import type { LoaderFunctionArgs } from '@remix-run/router';
 
 export const meta: MetaFunction = () => {
   return [
@@ -14,20 +16,37 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function loader() {
+export const loader = async ({ context }: LoaderFunctionArgs) => {
+  const { env } = context.cloudflare;
+  const { kv } = env as Env;
+  await kv.put('remix', 'remix can access cloudflare kv');
+  const value = await kv.get('remix');
+  console.log('at remix loader', value);
+
+  const turso = createClient({
+    url: 'libsql://church-pokrova-db-sviatoslavchyzh.turso.io',
+    authToken:
+      'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3MzE0MjkzMTUsImlkIjoiODEyZTFhMTctODM2OS00ZjU1LTlhOWUtODhlMTRjMTM0MDI1In0.Eiy2O-BdUobrZ8-vge8yl6FUSYW2USe9vLXcoiV_7P5cEeYgVJXSs0i2OyeQoZ-ewsKP8RE0vw2kh6EGMahQCQ',
+  });
+
+  const db = drizzle(turso, {
+    schema: {
+      user: userTable,
+      session: sessionTable,
+    },
+  });
+
   const [data] = await db.select().from(userTable);
 
   if (!data) {
-    return json({ error: 'No data found' }, { status: 404 });
+    throw new Error('No data found');
   }
 
   return data;
-}
+};
 
 export default function Index() {
-  const data = useLoaderData();
+  const data = useLoaderData<typeof loader>();
 
-  console.log(data);
-
-  return <>Hello World</>;
+  return <>Hello World {data.username}</>;
 }

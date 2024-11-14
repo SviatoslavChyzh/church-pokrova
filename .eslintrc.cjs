@@ -74,6 +74,9 @@ module.exports = {
         'plugin:import/recommended',
         'plugin:import/typescript',
       ],
+      rules: {
+        '@typescript-eslint/ban-ts-comment': 'off',
+      },
     },
 
     // Node
