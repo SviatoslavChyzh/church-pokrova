@@ -84,3 +84,7 @@ id = "f7e0030bd3ac4a4fbe41ee9b7532bd79"
 # [[env.production.kv_namespaces]]
 # binding = "MY_KV_NAMESPACE"
 # id = "<PRODUCTION_NAMESPACE_ID>"
+
+[vars]
+API_HOST = "example.com"
+API_ACCOUNT_ID = "example_user"

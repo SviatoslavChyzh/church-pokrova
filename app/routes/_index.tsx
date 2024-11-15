@@ -17,7 +17,7 @@ export const meta: MetaFunction = () => {
 
 export const loader = async ({ context }: LoaderFunctionArgs) => {
   const { env } = context.cloudflare;
-  const { kv } = env as Env;
+  // const { kv } = env as Env;
   // await kv.put('remix', 'remix can access cloudflare kv');
   // const value = await kv.get('remix');
   // console.log('at remix loader', value);
@@ -41,13 +41,15 @@ export const loader = async ({ context }: LoaderFunctionArgs) => {
   //   throw new Error('No data found');
   // }
 
-  console.log('kv', kv);
+  console.log('kv', context);
 
-  return { kv };
+  return { env };
 };
 
 export default function Index() {
-  const { kv } = useLoaderData<typeof loader>();
+  const { env } = useLoaderData<typeof loader>();
 
-  return <>Hello World myVar {kv}</>;
+  console.log(env);
+
+  return <>Hello World myVar</>;
 }

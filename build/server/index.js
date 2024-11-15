@@ -7,8 +7,9 @@ import { createThemeSessionResolver, ThemeProvider, useTheme, PreventFlashOnWron
 import { createCookieSessionStorage } from "@remix-run/cloudflare";
 import { clsx } from "clsx";
 import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
-import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
+import { z } from "zod";
 const ABORT_DELAY = 5e3;
 function headers() {
   return {
@@ -126,6 +127,21 @@ const sessionTable = sqliteTable("session", {
     mode: "timestamp"
   }).notNull()
 });
+const EnvSchema = z.object({
+  DATABASE_URL: z.string().url(),
+  TURSO_AUTH_TOKEN: z.string()
+});
+const precessEnv = EnvSchema.parse(process.env);
+const turso = createClient({
+  url: precessEnv.DATABASE_URL,
+  authToken: precessEnv.TURSO_AUTH_TOKEN
+});
+drizzle(turso, {
+  schema: {
+    user: userTable,
+    session: sessionTable
+  }
+});
 const meta = () => {
   return [
     { title: "Sviatoslav Chyzh | Full Stack Software Engineer" },
@@ -137,31 +153,14 @@ const meta = () => {
 };
 const loader = async ({ context }) => {
   const { env } = context.cloudflare;
-  const { kv } = env;
-  await kv.put("remix", "remix can access cloudflare kv");
-  const value = await kv.get("remix");
-  console.log("at remix loader", value);
-  const turso = createClient({
-    url: "libsql://church-pokrova-db-sviatoslavchyzh.turso.io",
-    authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3MzE0MjkzMTUsImlkIjoiODEyZTFhMTctODM2OS00ZjU1LTlhOWUtODhlMTRjMTM0MDI1In0.Eiy2O-BdUobrZ8-vge8yl6FUSYW2USe9vLXcoiV_7P5cEeYgVJXSs0i2OyeQoZ-ewsKP8RE0vw2kh6EGMahQCQ"
-  });
-  const db = drizzle(turso, {
-    schema: {
-      user: userTable,
-      session: sessionTable
-    }
-  });
-  const [data] = await db.select().from(userTable);
-  if (!data) {
-    throw new Error("No data found");
-  }
-  return data;
+  console.log("kv", env);
+  return { env };
 };
 function Index() {
-  const data = useLoaderData();
+  const { kv } = useLoaderData();
   return /* @__PURE__ */ jsxs(Fragment, { children: [
-    "Hello World ",
-    data.username
+    "Hello World myVar ",
+    kv
   ] });
 }
 const route2 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
@@ -170,7 +169,7 @@ const route2 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProper
   loader,
   meta
 }, Symbol.toStringTag, { value: "Module" }));
-const serverManifest = { "entry": { "module": "/assets/entry.client-Cbb3Cy2-.js", "imports": ["/assets/components-DHPpVo2E.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/root-CgHMFU71.js", "imports": ["/assets/components-DHPpVo2E.js"], "css": [] }, "routes/action.set-theme": { "id": "routes/action.set-theme", "parentId": "root", "path": "action/set-theme", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/action.set-theme-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/_index-DCE-Y4Lw.js", "imports": ["/assets/components-DHPpVo2E.js"], "css": [] } }, "url": "/assets/manifest-bef6037b.js", "version": "bef6037b" };
+const serverManifest = { "entry": { "module": "/assets/entry.client-D4UiE9Yk.js", "imports": ["/assets/components-F5-ItIsI.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/root-Bi9T1AlQ.js", "imports": ["/assets/components-F5-ItIsI.js"], "css": [] }, "routes/action.set-theme": { "id": "routes/action.set-theme", "parentId": "root", "path": "action/set-theme", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/action.set-theme-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/_index-DGG_JVRC.js", "imports": ["/assets/components-F5-ItIsI.js"], "css": [] } }, "url": "/assets/manifest-cbd73488.js", "version": "cbd73488" };
 const mode = "production";
 const assetsBuildDirectory = "build/client";
 const basename = "/";

@@ -23,9 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 /.cache
-/build
 .env
 .dev.vars
 
 .wrangler
 /migrations
+/build/
